@@ -2,7 +2,11 @@ from openai import OpenAI
 import anthropic 
 import google.generativeai as genai 
 
-import base64 
+import base64
+import os
+import numpy as np
+from PIL import Image 
+import io
 import cv2 
 import json 
 import re 
@@ -52,6 +56,7 @@ class Agent():
         elif self.model_key == 'gemini':
             file = open("GOOGLE_API_KEY.txt", "r")
             api_key = file.read()
+            {"response_mime_type": "application/json", 'api_key':api_key}
             genai.configure(api_key=api_key)
             generation_config = genai.GenerationConfig(temperature=1)
             if self.system_message is not None:
@@ -63,6 +68,26 @@ class Agent():
         _, buffer = cv2.imencode(".jpg", cv_image)
         return base64.b64encode(buffer).decode("utf-8")
     
+    def encode_image_claude(self, image):
+        if isinstance(image, np.ndarray):
+            # Convert NumPy array to PIL Image
+            pil_image = Image.fromarray(image)
+            
+            # Save PIL Image to a bytes buffer
+            buffer = io.BytesIO()
+            pil_image.save(buffer, format="PNG")
+            image_binary = buffer.getvalue()
+        elif isinstance(image, (str, bytes, os.PathLike)):
+            # If it's a file path, read the file
+            with open(image, "rb") as image_file:
+                image_binary = image_file.read()
+        else:
+            raise TypeError("Expected numpy.ndarray, str, bytes, or os.PathLike object")
+
+        # Encode to base64
+        base64_encoded = base64.b64encode(image_binary).decode('utf-8')
+        return base64_encoded
+        
     def query_LLM(self):
 
         # Check which model to use and prompt the model 
@@ -74,11 +99,20 @@ class Agent():
                 temperature=1,
             )
 
-        elif self.model_key == 'claude':
+        if self.model_key == 'claude':
+            # Ensure all messages are in the correct format
+            for msg in self.messages:
+                if isinstance(msg['content'], list):
+                    for item in msg['content']:
+                        if item['type'] == 'text':
+                            item['text'] = str(item['text'])  # Ensure text is a string
+                elif isinstance(msg['content'], str):
+                    msg['content'] = str(msg['content'])  # Ensure content is a string
+
             if self.system_message is not None:
                 self.response = self.client.messages.create(
                     model=self.model_name,
-                    max_tokens=4096,
+                    max_tokens=500,
                     temperature=1,
                     system=self.system_message,
                     messages=self.messages,
@@ -86,7 +120,7 @@ class Agent():
             else:
                 self.response = self.client.messages.create(
                     model=self.model_name,
-                    max_tokens=4096,
+                    max_tokens=500,
                     temperature=1,
                     messages=self.messages,
                 )
@@ -104,7 +138,6 @@ class Agent():
             print('Incorrect Model name given please give correct model name')
 
         self.reset_count = 0
-
         # return the output of the model
         return self.response
     
@@ -153,7 +186,6 @@ class Agent():
         return cleaned_output
 
     def clean_response(self, response, path):
-        # Correctly get the response from model
         if self.model_key == 'gpt4' or self.model_key == 'gpt4o':
             response_text = response.choices[0].message.content
         elif self.model_key == 'claude':
@@ -191,20 +223,18 @@ class Agent():
 
             print('Generating new response...')
             while True:
-                # See if you get the correct output
+                # See if you can get the correct output
                 try:
                     response = self.query_LLM()
                     print('\n\nProper response was generated')
                     break
-
-                # If it doesn't then reset the model
+                # If it doesn't the reset the model
                 except:
                     print('Re-initiating model...')
                     self.reset_model()
 
                     if self.reset_count >= 3:
                         return None
-            
                     
         
         return response_text
@@ -253,7 +283,8 @@ class Agent():
             response_text = self.clean_response(response, self.path)
 
     def get_response(self):
-        # Check to see if you get a response from the model
+        # Check to see if you can get a response from the model
+        response = self.query_LLM()
         try: 
             response = self.query_LLM()
 
@@ -268,12 +299,13 @@ class Agent():
 
             while True:
 
-                # See if you get the correct output
+                # See if you can get the correct output
                 try:
                     response = self.query_LLM()
                     print('\n\nReceived correct output continuing experiment.')
                     break
-                # If it doesn't then reset the model
+
+                # If it doesn't the reset the model
                 except:
                     # Create error message to reprompt the model
                     error_message = 'Please provide a proper output'
@@ -284,7 +316,7 @@ class Agent():
                     print('Re-initiating model...')
                     self.reset_model() 
 
-                    # This means that more than likely you ran out of credits so break the code to not spend money
+                    # This means that more than likely you ran out of credits so break the code
                     if self.reset_count >= 3:
                         return None
                     
@@ -354,55 +386,46 @@ class Agent():
         
         elif self.model_key == 'claude':
             if frame is not None and user_msg is not None:
-                image_data = self.encode_image(frame)
-                self.messages.append(
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "image",
-                                "source": {
-                                    "type": "base64",
-                                    "media_type": "image/jpeg",
-                                    "data": image_data
-                                }
-                            },
-                            {
-                                "type": "text",
-                                "text": user_msg
+                image_data = self.encode_image_claude(frame)
+                self.messages.append({
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/png",
+                                "data": image_data
                             }
-                        ]
-                    }
-                )
-            elif frame is not None:
-                image_data = self.encode_image(frame)
-                self.messages.append(
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "image",
-                                "source": {
-                                    "type": "base64",
-                                    "media_type": "image/jpeg",
-                                    "data": image_data
-                                }
+                        },
+                        {
+                            "type": "text",
+                            "text": str(user_msg)  # Ensure user_msg is a string
+                        }
+                    ]
+                })
+            elif frame is not None and user_msg is None:
+                image_data = self.encode_image_claude(frame)
+                self.messages.append({
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/png",
+                                "data": image_data
                             }
-                        ]
-                    }
-                )
-            elif user_msg is not None:
-                self.messages.append(
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": user_msg
-                            }
-                        ]
-                    }
-                )
+                        }
+                    ]
+                })
+            elif frame is None and user_msg is not None:
+                self.messages.append({
+                    "role": "user",
+                    "content": str(user_msg)  # Ensure user_msg is a string and use it directly
+                })
+
+        
 
         if self.model_key == 'gemini':
             if frame is not None and user_msg is not None:
@@ -452,7 +475,7 @@ class Agent():
 
         if self.model_key =='gpt4' or self.model_key =='gpt4o':
             if demo_str is not None:
-                self.messages.append({"role": "assistant", "content": self.response})
+                self.messages.append({"role": "assistant", "content": demo_str})
                 demo_str = None
                 return
             
@@ -501,7 +524,7 @@ class Agent():
                         "parts": assistant_msg
                     }
                 )
-
+            
         else:
             self.messages.append(
                 {
@@ -514,25 +537,24 @@ class Agent():
 
     def delete_messages(self):
         print('Deleting Set of Messages...')
-
         if self.model_key == 'gpt4' or self.model_key == 'gpt4o':
-            message_len = 9
+            message_len = 45
         else:
-            message_len = 8
-
+            message_len = 44
         
         if len(self.messages) >= message_len:
 
             if self.messages[0]['role'] == 'system':
                 # Delete user message
-                value = self.messages.pop(1)
+                value = self.messages.pop(37)
 
                 # Delete Assistant message
-                value = self.messages.pop(1)
+                value = self.messages.pop(37)
 
             else:
                 # Delete user message
-                self.messages.pop(0)
+                self.messages.pop(36)
 
                 # Delete Assistant message
-                self.messages.pop(0)
+                self.messages.pop(36)
+

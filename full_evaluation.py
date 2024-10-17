@@ -10,5 +10,4 @@ for model in models:
     for game in environments:
         print('Running test for: ', game)
         print('\n\n')
-        results = run(game, environment_list[game], model)
-    
+        results = run(game, environment_list[game], model, True)

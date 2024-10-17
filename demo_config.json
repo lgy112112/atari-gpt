@@ -1,0 +1,373 @@
+{
+    "ALE/Alien-v5": {
+        "img": ["alien/rgb_229.png", "alien/rgb_231.png", "alien/rgb_233.png", "alien/rgb_545.png", "alien/rgb_547.png", "alien/rgb_549.png", "alien/rgb_781.png", "alien/rgb_783.png", "alien/rgb_785.png", "alien/rgb_991.png", "alien/rgb_993.png", "alien/rgb_995.png"],
+        "demo": [
+            {
+                "reasoning": "The character is at the center of the screen, and one alien is directly left and the other is above. The best course of action is to fire left to eliminate the alien, ensuring the character's safety and getting closer to an area with many pellets left to collect.",
+                "action": 12
+            },
+            {
+                "reasoning": "The character is at the center of the screen, and one alien is directly left and the other is above. The best course of action is to fire left to eliminate the alien, ensuring the character's safety and getting closer to an area with many pellets left to collect.",
+                "action": 12
+            },
+            {
+                "reasoning": "The character is at the center of the screen, and one alien is directly left and the other is above. The best course of action is to fire left to eliminate the alien, ensuring the character's safety and getting closer to an area with many pellets left to collect.",
+                "action": 12
+            },
+            {
+                "reasoning": "The character is at the bottom right of the screen, and an alien is approaching from the bottom left. The best course of action is to fire left to eliminate the alien as it comes up, ensuring the character's safety.",
+                "action": 12
+            },
+            {
+                "reasoning": "The character is at the bottom right of the screen, and an alien is approaching from the bottom left. The best course of action is to fire left to eliminate the alien as it comes up, ensuring the character's safety.",
+                "action": 12
+            },
+            {
+                "reasoning": "The character is at the bottom right of the screen, and an alien is approaching from the bottom left. The best course of action is to fire left to eliminate the alien as it comes up, ensuring the character's safety.",
+                "action": 12
+            },
+            {
+                "reasoning": "The character is at the top right of the screen, and no aliens are in the immediate vicinity. The best course of action is to move left to collect more pellets, maximizing the score on the screen.",
+                "action": 4
+            },
+            {
+                "reasoning": "The character is at the top right of the screen, and no aliens are in the immediate vicinity. The best course of action is to move left to collect more pellets, maximizing the score on the screen.",
+                "action": 4
+            },
+            {
+                "reasoning": "The character is at the top right of the screen, and no aliens are in the immediate vicinity. The best course of action is to move left to collect more pellets, maximizing the score on the screen.",
+                "action": 4
+            },
+            {
+                "reasoning": "The character is nowhere to be seen. The best course of action is to make no action until the character can be seen again.",
+                "action": 0
+            },
+            {
+                "reasoning": "The character is nowhere to be seen. The best course of action is to make no action until the character can be seen again.",
+                "action": 0
+            },
+            {
+                "reasoning": "The character is nowhere to be seen. The best course of action is to make no action until the character can be seen again.",
+                "action": 0
+            }
+        ]
+    },
+    "BreakoutDeterministic-v4": {
+        "img": ["breakout/rgb_267.png", "breakout/rgb_269.png", "breakout/rgb_271.png", "breakout/rgb_521.png", "breakout/rgb_523.png", "breakout/rgb_525.png", "breakout/rgb_777.png", "breakout/rgb_779.png", "breakout/rgb_781.png", "breakout/rgb_985.png", "breakout/rgb_987.png", "breakout/rgb_989.png"],
+        "demo": [
+            {
+                "reasoning": "The ball is aligned with the paddle. The paddle needs to remain still to intercept the ball and deflect back to the bricks.",
+                "action": 0
+            },
+            {
+                "reasoning": "The ball is not quite aligned with the paddle. The paddle needs to move slightly right to track the ball.",
+                "action": 2
+            },
+            {
+                "reasoning": "The ball is not aligned with the paddle. The paddle needs to be moved to the right to track the ball.",
+                "action": 2
+            },
+            {
+                "reasoning": "The ball is not aligned with the paddle. The paddle needs to be moved to the left to intercept the ball and deflect the ball back.",
+                "action": 3
+            },
+            {
+                "reasoning": "The ball is not aligned with the paddle. The paddle needs to be moved to the left to intercept the ball and deflect the ball back.",
+                "action": 3
+            },
+            {
+                "reasoning": "The ball is not aligned with the paddle. The paddle needs to be moved to the left to intercept the ball and deflect the ball back.",
+                "action": 3
+            },
+            {
+                "reasoning": "The ball is not aligned with the paddle. The paddle needs to be moved to the right to track the ball.",
+                "action": 2
+            },
+            {
+                "reasoning": "The ball is not aligned with the paddle. The paddle needs to be moved to the right to track the ball.",
+                "action": 2
+            },
+            {
+                "reasoning": "The ball is not aligned with the paddle. The paddle needs to be moved to the right to track the ball.",
+                "action": 2
+            },
+            {
+                "reasoning": "The ball is aligned with the paddle, but it may bounce right from the wall. The paddle needs to be moved slightly to the right to intercept the ball and deflect the ball back.",
+                "action": 2
+            },
+            {
+                "reasoning": "The ball is aligned with the paddle, and it will bounce right from the wall. The paddle needs to remain still to intercept the ball and prevent it from missing the paddle.",
+                "action": 0
+            },
+            {
+                "reasoning": "The ball is aligned with the paddle, and was successfully deflected. The paddle needs to be moved to the right to track the ball.",
+                "action": 2
+            }
+        ]
+    },
+    "ALE/Frogger-v5": {
+        "img": ["frogger/rgb_251.png", "frogger/rgb_253.png", "frogger/rgb_255.png", "frogger/rgb_515.png", "frogger/rgb_517.png", "frogger/rgb_519.png", "frogger/rgb_751.png", "frogger/rgb_753.png", "frogger/rgb_755.png", "frogger/rgb_989.png", "frogger/rgb_991.png", "frogger/rgb_993.png"],
+        "demo": [
+            {
+                "reasoning": "The frog is positioned at the center and needs to cross the water by jumping on floating platforms. There is a lilypad currently in front of the frog. Going up will allow the frog to progress forward.",
+                "action": 1
+            },
+            {
+                "reasoning": "The frog is positioned at the center and needs to cross the water by jumping on floating platforms. There is a lilypad currently in front of the frog. Going up will allow the frog to progress forward.",
+                "action": 1
+            },
+            {
+                "reasoning": "The frog is positioned in the river on a lilypad. Currently, there are no platforms ahead to jump onto. Not moving will allow the frog to stay until a floating platform appears ahead to jump onto.",
+                "action": 0
+            },
+            {
+                "reasoning": "The frog is positioned in the river on a log. Currently, there are no platforms ahead to jump onto. Not moving will allow the frog to stay until the lilypads from the right are in front to jump onto.",
+                "action": 0
+            },
+            {
+                "reasoning": "The frog is positioned in the river on a log. Currently, there are no platforms ahead to jump onto. Not moving will allow the frog to stay until the lilypads from the right are in front to jump onto.",
+                "action": 0
+            },
+            {
+                "reasoning": "The frog is positioned in the river on a log. Currently, there are no platforms ahead to jump onto. Not moving will allow the frog to stay until the lilypads from the right are in front to jump onto.",
+                "action": 0
+            },
+            {
+                "reasoning": "The frog is positioned on the road near the center of the screen. There are no obstacles in front, cars behind on the road. Moving up is the best action to reach the center checkpoint.",
+                "action": 1
+            },
+            {
+                "reasoning": "The frog is positioned on the checkpoint at the center of the screen. There is a lilypad ahead slightly to the left. Moving left is the best action to align with the lilypad to jump onto it.",
+                "action": 3
+            },
+            {
+                "reasoning": "The frog is positioned on the checkpoint at the center of the screen. The lilypad is now aligned with the frog. Moving up is the best action to progress forward.",
+                "action": 1
+            },
+            {
+                "reasoning": "The frog is positioned on the river near the top left of the screen. There is log to the right ahead of the frog. Making no action is best until the log aligns with the frog for it to jump onto and progress forward.",
+                "action": 0
+            },
+            {
+                "reasoning": "The frog is positioned on the river near the top left of the screen. There is log to the right ahead of the frog. Making no action is best until the log aligns with the frog for it to jump onto and progress forward.",
+                "action": 0
+            },
+            {
+                "reasoning": "The frog is positioned on the river near the top left of the screen. There is log to the right ahead of the frog. Making no action is best until the log aligns with the frog for it to jump onto and progress forward.",
+                "action": 0
+            }
+        ]
+    },
+    "MsPacmanDeterministic-v4": {
+        "img": ["mspacman/rgb_257.png", "mspacman/rgb_259.png", "mspacman/rgb_261.png", "mspacman/rgb_497.png", "mspacman/rgb_499.png", "mspacman/rgb_501.png", "mspacman/rgb_753.png", "mspacman/rgb_755.png", "mspacman/rgb_757.png", "mspacman/rgb_977.png", "mspacman/rgb_979.png", "mspacman/rgb_981.png"],
+        "demo": [
+            {
+                "reasoning": "Given the current frame, Ms. Pacman is directly above a ghost, but is powered-up to consume the ghost. Moving down, down-right, or down-left would result in a direct collision with the ghost, consuming it in the powered-up state. Moving to the right keeps Ms. Pacman on the current path and left leads to less pellets, which does not provide an immediate escape. Moving up, up-right, or up-left moves away from the ghost and towards paths with more pellets to collect. Moving up is best to collect more pellets.",
+                "action": 1
+            },
+            {
+                "reasoning": "Given the current frame, Ms. Pacman is directly above a ghost, but is powered-up to consume the ghost. Moving down, down-right, or down-left would result in a direct collision with the ghost, consuming it in the powered-up state. Moving to the right keeps Ms. Pacman on the current path and left leads to less pellets, which does not provide an immediate escape. Moving up, up-right, or up-left moves away from the ghost and towards paths with more pellets to collect. Moving up is best to collect more pellets.",
+                "action": 1
+            },
+            {
+                "reasoning": "Given the current frame, Ms. Pacman is directly above a ghost, but is powered-up to consume the ghost. Moving down, down-right, or down-left would result in a direct collision with the ghost, consuming it in the powered-up state. Moving to the right keeps Ms. Pacman on the current path and left leads to less pellets, which does not provide an immediate escape. Moving up, up-right, or up-left moves away from the ghost and towards paths with more pellets to collect. Moving up is best to collect more pellets.",
+                "action": 1
+            },
+            {
+                "reasoning": "Given the current frame, Ms. Pacman is not near any ghosts. Moving down, down-right, or down-left would lead to a path with no pellets. Moving to the right keeps Ms. Pacman on a path to collect more pellets and left does not lead anywhere. Moving up, up-right, or up-left gets Ms. Pacman stuck in the corner. The best move is to go right.",
+                "action": 2
+            },
+            {
+                "reasoning": "Given the current frame, Ms. Pacman is not near any ghosts. Moving down, down-right, or down-left would lead to a path with no pellets. Moving to the right keeps Ms. Pacman on a path to collect more pellets and left does not lead anywhere. Moving up, up-right, or up-left gets Ms. Pacman stuck in the corner. The best move is to go right.",
+                "action": 2
+            },
+            {
+                "reasoning": "Given the current frame, Ms. Pacman is not near any ghosts. Moving down, down-right, or down-left would lead to a path with no pellets. Moving to the right and left does not lead anywhere. Moving up or up-left gets Ms. Pacman stuck in the corner. Moving up-right would lead to more pellets. The best move is to go up-right.",
+                "action": 5
+            },
+            {
+                "reasoning": "Given the current frame, Ms. Pacman is not near any ghosts that are freely moving. Moving down or down-left would lead to a path with more pellets. Moving to the right or left keeps Ms. Pacman on a path to collect little to no pellets. Moving up, up-right, or up-left also leads to little to no pellets. Ms. Pacman needs to be careful of the ghost near the bottom, but it looks like it is heading to the left. Moving down-left is the best move.",
+                "action": 8
+            },
+            {
+                "reasoning": "Given the current frame, Ms. Pacman is not near any ghosts that are freely moving. Moving down or down-left would lead to a path with more pellets. Moving to the right or left keeps Ms. Pacman on a path to collect little to no pellets. Moving up, up-right, or up-left also leads to little to no pellets. Ms. Pacman needs to be careful of the ghost near the bottom, but it looks like it is heading to the left. Moving down-left is the best move.",
+                "action": 8
+            },
+            {
+                "reasoning": "Given the current frame, Ms. Pacman is not near any ghosts that are freely moving. Moving down or down-left would lead to a path with more pellets. Moving to the right or left keeps Ms. Pacman on a path to collect little to no pellets. Moving up, up-right, or up-left also leads to little to no pellets. Ms. Pacman needs to be careful of the ghost near the bottom, but it looks like it is heading to the left. Moving down-left is the best move.",
+                "action": 8
+            },
+            {
+                "reasoning": "Given the current frame, Ms. Pacman is near a ghost to the bottom left. Moving down, down-right, or down-left would lead to a path with more pellets, but it is dangerous with a nearby ghost. Moving to the right or left keeps Ms. Pacman on a path to collect little to no pellets. Moving up, up-right, or up-left also leads to little to no pellets. Ms. Pacman needs to be careful of the ghost near the bottom left, but it looks like it is heading to the left. The best move is to go left.",
+                "action": 3
+            },
+            {
+                "reasoning": "Given the current frame, Ms. Pacman is near a ghost to the bottom left. Moving down, down-right, or down-left would lead to a path with more pellets, but it is dangerous with a nearby ghost. Moving to the right or left keeps Ms. Pacman on a path to collect little to no pellets. Moving up, up-right, or up-left also leads to little to no pellets. Ms. Pacman needs to be careful of the ghost near the bottom left, but it looks like it is heading to the left. The best move is to go left.",
+                "action": 3
+            },
+            {
+                "reasoning": "Given the current frame, Ms. Pacman is near a ghost to the bottom left. Moving down, down-right, or down-left would lead to a path with more pellets, but it is dangerous with a nearby ghost. Moving to the right or left keeps Ms. Pacman on a path to collect little to no pellets. Moving up, up-right, or up-left also leads to little to no pellets. Ms. Pacman needs to be careful of the ghost near the bottom left, but it looks like it is heading to the left. The best move is to go left.",
+                "action": 3
+            }
+        ]
+    },
+    "PongDeterministic-v4": {
+        "img": ["pong/rgb_253.png", "pong/rgb_255.png", "pong/rgb_257.png", "pong/rgb_517.png", "pong/rgb_519.png", "pong/rgb_521.png", "pong/rgb_753.png", "pong/rgb_755.png", "pong/rgb_757.png", "pong/rgb_989.png", "pong/rgb_991.png", "pong/rgb_993.png"],
+        "demo": [
+            {
+                "reasoning": "In the current frame, the ball is positioned above the right paddle. The right paddle needs to stay aligned with the approaching ball to hit it back. Keeping the right paddle aligned to the ball is essential to successfully return the ball. The best move is to go up (right).",
+                "action": 2
+            },
+            {
+                "reasoning": "In the current frame, the ball is positioned almost aligned with the right paddle. The right paddle needs to stay aligned with the approaching ball to hit it back. Keeping the right paddle aligned to the ball is essential to successfully return the ball. The best move is to remain still.",
+                "action": 0
+            },
+            {
+                "reasoning": "In the current frame, the ball is positioned almost aligned with the right paddle, but slightly below. The right paddle needs to stay aligned with the approaching ball to hit it back. The best move is to go slightly down (left).",
+                "action": 3
+            },
+            {
+                "reasoning": "In the current frame, the ball is positioned above the paddle. The right paddle needs to go up slightly to track the ball. Moving the right paddle slightly up (rigth) aligns itself better to the ball.",
+                "action": 2
+            },
+            {
+                "reasoning": "In the current frame, the ball is positioned almost aligned with the right paddle, but not quite. The right paddle needs to go up slightly to align with the ball to track it. Moving the right paddle slightly up (right) aligns itself better to the ball.",
+                "action": 2
+            },
+            {
+                "reasoning": "In the current frame, the ball is positioned almost aligned with the right paddle, but not quite. The right paddle needs to go down slightly to align with the approaching ball to hit it back. Moving the right paddle slightly down (left) aligns itself better to the ball.",
+                "action": 3
+            },
+            {
+                "reasoning": "In the current frame, the ball is positioned above the right paddle. The right paddle needs to go up to align with the approaching ball to track it. Moving the right paddle up (right) aligns itself better to the ball.",
+                "action": 2
+            },
+            {
+                "reasoning": "In the current frame, the ball is positioned above the right paddle. The right paddle needs to go up to align with the approaching ball to track it. Moving the right paddle up (right) aligns itself better to the ball.",
+                "action": 2
+            },
+            {
+                "reasoning": "In the current frame, the ball is positioned above the right paddle. The right paddle needs to go up to align with the approaching ball to track it. Moving the right paddle up (right) aligns itself better to the ball.",
+                "action": 2
+            },
+            {
+                "reasoning": "In the current frame, the ball is positioned almost aligned with the right paddle. The right paddle needs to stay aligned with the approaching ball to hit it back. Keeping the right paddle aligned to the ball is essential to successfully return the ball. The best move is to remain still.",
+                "action": 0
+            },
+            {
+                "reasoning": "In the current frame, the ball is positioned almost aligned with the right paddle. The right paddle needs to stay aligned with the approaching ball to hit it back. Keeping the right paddle aligned to the ball is essential to successfully return the ball. The best move is to remain still.",
+                "action": 0
+            },
+            {
+                "reasoning": "In the current frame, the ball is positioned almost aligned with the right paddle. The right paddle needs to stay aligned with the approaching ball to hit it back. Keeping the right paddle aligned to the ball is essential to successfully return the ball. The best move is to remain still.",
+                "action": 0
+            }
+        ]
+    },
+    "SeaquestDeterministic-v4": {
+        "img": ["seaquest/rgb_249.png", "seaquest/rgb_251.png", "seaquest/rgb_253.png", "seaquest/rgb_517.png", "seaquest/rgb_519.png", "seaquest/rgb_521.png", "seaquest/rgb_749.png", "seaquest/rgb_751.png", "seaquest/rgb_753.png", "seaquest/rgb_991.png", "seaquest/rgb_993.png", "seaquest/rgb_995.png"],
+        "demo": [
+            {
+                "reasoning": "The submarine is in the middle of the screen with enemy submarines to the right and bottom right. There is one rescued diver.  Given this scenario, moving up would be safer to avoid the projectiles from the enemy submarines and finish rescuing the diver. Moving up to avoid put more distance between the enemy submarines and their projectiles seems to be the best action.",
+                "action": 2
+            },
+            {
+                "reasoning": "The submarine is in the middle of the screen with enemy submarines to the right and bottom right. There is one rescued diver.  Given this scenario, moving up would be safer to avoid the projectiles from the enemy submarines and finish rescuing the diver. Moving up to avoid put more distance between the enemy submarines and their projectiles seems to be the best action.",
+                "action": 2
+            },
+            {
+                "reasoning": "The submarine is in the middle of the screen with enemy submarines to the right and bottom right. There is one rescued diver.  Given this scenario, moving up would be safer to avoid the projectiles from the enemy submarines and finish rescuing the diver. Moving up to avoid put more distance between the enemy submarines and their projectiles seems to be the best action.",
+                "action": 2
+            },
+            {
+                "reasoning": "The submarine is at the top of the screen. The objective is to rescue swimming divers. Given this scenario, moving down to explore and get closer to approaching divers would be best, but must be careful to avoid obstacles like fish.",
+                "action": 5
+            },
+            {
+                "reasoning": "The submarine is at the top of the screen. The objective is to rescue swimming divers. Given this scenario, moving down to explore and get closer to approaching divers would be best, but must be careful to avoid obstacles like fish.",
+                "action": 5
+            },
+            {
+                "reasoning": "The submarine is at the top of the screen. The objective is to rescue swimming divers. Given this scenario, moving down to explore and get closer to approaching divers would be best, but must be careful to avoid obstacles like fish.",
+                "action": 5
+            },
+            {
+                "reasoning": "The submarine is at the center of the screen. There is one rescued diver. There are fish obstacles to the left and approaching from the right. Given this scenario, moving up to avoid the fish would be the best and to finish rescuing the diver.",
+                "action": 2
+            },
+            {
+                "reasoning": "The submarine is at the center of the screen. There is one rescued diver. There are fish obstacles to the left and approaching from the right. Given this scenario, moving up to avoid the fish would be the best and to finish rescuing the diver.",
+                "action": 2
+            },
+            {
+                "reasoning": "The submarine is at the center of the screen. There is one rescued diver. There are fish obstacles to the left and approaching from the right. Given this scenario, moving up to avoid the fish would be the best and to finish rescuing the diver.",
+                "action": 2
+            },
+            {
+                "reasoning": "The submarine is at the top of the screen. The objective is to rescue swimming divers. Given this scenario, moving down to explore and get closer to approaching divers would be best, but must be careful to avoid obstacles like fish.",
+                "action": 5
+            },
+            {
+                "reasoning": "The submarine is at the top of the screen. The objective is to rescue swimming divers. Given this scenario, moving down to explore and get closer to approaching divers would be best, but must be careful to avoid obstacles like fish.",
+                "action": 5
+            },
+            {
+                "reasoning": "The submarine is at the top of the screen. The objective is to rescue swimming divers. Given this scenario, moving down to explore and get closer to approaching divers would be best, but must be careful to avoid obstacles like fish.",
+                "action": 5
+            }
+        ]
+    },
+    "SpaceInvadersDeterministic-v4": {
+        "img": ["space_invaders/rgb_233.png", "space_invaders/rgb_235.png", "space_invaders/rgb_237.png", "space_invaders/rgb_545.png", "space_invaders/rgb_547.png", "space_invaders/rgb_549.png", "space_invaders/rgb_757.png", "space_invaders/rgb_759.png", "space_invaders/rgb_761.png", "space_invaders/rgb_945.png", "space_invaders/rgb_947.png", "space_invaders/rgb_949.png"],
+        "demo": [
+            {
+                "reasoning": "In this frame, the player's ship is centered at the bottom of the screen, with alien ships descending from the top. The best action would involve both moving to avoid incoming shots and firing at the alien ships to eliminate them. Since there is no immediate threat in terms of shots directly poised to hit, firing while staying in place may be the best option. It maximizes the chance of eliminating an alien ship.",
+                "action": 1
+            },
+            {
+                "reasoning": "In this frame, the player's ship is centered at the bottom of the screen, with alien ships descending from the top. The best action would involve both moving to avoid incoming shots and firing at the alien ships to eliminate them. Since there is no immediate threat in terms of shots directly poised to hit, firing while staying in place may be the best option. It maximizes the chance of eliminating an alien ship.",
+                "action": 1
+            },
+            {
+                "reasoning": "In this frame, the player's ship is centered at the bottom of the screen, with alien ships descending from the top. The best action would involve both moving to avoid incoming shots and firing at the alien ships to eliminate them. Since there is no immediate threat in terms of shots directly poised to hit, firing while staying in place may be the best option. It maximizes the chance of eliminating an alien ship.",
+                "action": 1
+            },
+            {
+                "reasoning": "In this frame, the player's ship is centered at the bottom of the screen, with alien ships descending from the top. The best action would involve both moving to avoid incoming shots and firing at the alien ships to eliminate them. Since there is no immediate threat in terms of shots directly poised to hit, firing while moving to the right may be the best option. It maximizes the chance of eliminating an alien ship.",
+                "action": 4
+            },
+            {
+                "reasoning": "In this frame, the player's ship is centered at the bottom of the screen, with alien ships descending from the top. The best action would involve both moving to avoid incoming shots and firing at the alien ships to eliminate them. Since there is no immediate threat in terms of shots directly poised to hit, firing while moving to the right may be the best option. It maximizes the chance of eliminating an alien ship.",
+                "action": 4
+            },
+            {
+                "reasoning": "In this frame, the player's ship is centered at the bottom of the screen, with alien ships descending from the top. The best action would involve both moving to avoid incoming shots and firing at the alien ships to eliminate them. Since there is no immediate threat in terms of shots directly poised to hit, firing while moving to the right may be the best option. It maximizes the chance of eliminating an alien ship.",
+                "action": 4
+            },
+            {
+                "reasoning": "In this frame, the player's ship is centered at the bottom of the screen, with alien ships descending from the top. The best action would involve both moving to avoid incoming shots and firing at the alien ships to eliminate them. Since there is no immediate threat in terms of shots directly poised to hit, moving to the right may be the best option. It maximizes the chance of eliminating an alien ship by moving toward a space with more alien ships to fire at.",
+                "action": 2
+            },
+            {
+                "reasoning": "In this frame, the player's ship is centered at the bottom of the screen, with alien ships descending from the top. The best action would involve both moving to avoid incoming shots and firing at the alien ships to eliminate them. Since there is no immediate threat in terms of shots directly poised to hit, moving to the right may be the best option. It maximizes the chance of eliminating an alien ship by moving toward a space with more alien ships to fire at.",
+                "action": 2
+            },
+            {
+                "reasoning": "In this frame, the player's ship is centered at the bottom of the screen, with alien ships descending from the top. The best action would involve both moving to avoid incoming shots and firing at the alien ships to eliminate them. Since there is no immediate threat in terms of shots directly poised to hit, moving to the right may be the best option. It maximizes the chance of eliminating an alien ship by moving toward a space with more alien ships to fire at.",
+                "action": 2
+            },
+            {
+                "reasoning": "In this frame, the player's ship is centered at the bottom of the screen, with alien ships descending from the top. The best action would involve both moving to avoid incoming shots and firing at the alien ships to eliminate them. Since there is an immediate threat in terms of shots directly poised to hit, firing while moving left may be the best option. It maximizes the chance of eliminating an alien ship while avoiding enemy shots.",
+                "action": 5
+            },
+            {
+                "reasoning": "In this frame, the player's ship is centered at the bottom of the screen, with alien ships descending from the top. The best action would involve both moving to avoid incoming shots and firing at the alien ships to eliminate them. Since there is an immediate threat in terms of shots directly poised to hit, firing while moving left may be the best option. It maximizes the chance of eliminating an alien ship while avoiding enemy shots.",
+                "action": 5
+            },
+            {
+                "reasoning": "In this frame, the player's ship is centered at the bottom of the screen, with alien ships descending from the top. The best action would involve both moving to avoid incoming shots and firing at the alien ships to eliminate them. Since there is an immediate threat in terms of shots directly poised to hit, firing while moving left may be the best option. It maximizes the chance of eliminating an alien ship while avoiding enemy shots.",
+                "action": 5
+            }
+        ]
+    }
+}
