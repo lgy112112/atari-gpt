@@ -1,6 +1,6 @@
 # Atari-GPT
 
-This is the official codebase for [Atari-GPT](https://arxiv.org/pdf/2408.15950), a new benchmark for Large Language Models (LLMs) on Atari games. To see more results see our project [webpage](https://sites.google.com/view/atari-gpt/).
+This is the official codebase for [Atari-GPT](https://arxiv.org/pdf/2408.15950), a new benchmark for Large Language Models (LLMs) on Atari games. To see more results see our project [webpage](https://dev1nw.github.io/atari-gpt/).
 
 ## Set up
 
