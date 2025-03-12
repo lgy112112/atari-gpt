@@ -1,6 +1,13 @@
 .DS_Store
 *.txt
-/experiments
+experiments/
+analysis/
+.log
+HG_API_KEY.txt
+OPENAI_API_KEY.txt
+GOOGLE_API_KEY.txt
+ANTHROPIC_API_KEY.txt
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
