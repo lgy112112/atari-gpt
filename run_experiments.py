@@ -1,7 +1,7 @@
-
 import gymnasium as gym
 import time
 import json
+from tqdm import tqdm
 
 from llms import Agent
 import cv2
@@ -27,13 +27,13 @@ class ContinuousRecordVideo(RecordVideo):
         return observation, info
 
 class run():
-    def __init__(self, env_name, prompt, model):
+    def __init__(self, env_name, prompt, model, output_dir="./experiments/"):
       self.model_name = model
       self.rewards = 0
       self.cum_rewards = []
       self.action_list = []
       self.header = ["actions", "cumulative_rewards"]
-      self.MODELS = {"OpenAI": ["gpt-4-turbo", "gpt-4o", "gpt-3.5-turbo"], 
+      self.MODELS = {"OpenAI": ["gpt-4-turbo", "gpt-4o-2024-11-20"], 
               "Anthropic": ["claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307", "claude-3.5-sonnet", "max-tokens-3-5-sonnet-2024-07-15"], 
               "Google": ["gemini-1.5-pro-latest", "gemini-pro", "gemini-pro-vision", "gemini-1.5-flash-latest"], 
               "Meta": ["llama3-70b-8192", "llama3-8b-8192"]
@@ -65,7 +65,8 @@ class run():
       self.num_timesteps = 1000
 
       # Create new experiment folders path with model name 
-      self.new_dir = "./experiments/" + self.temp_env_name[:-3] + '_'+ model +'/'
+      self.output_dir = output_dir
+      self.new_dir = os.path.join(self.output_dir, self.temp_env_name[:-3] + '_'+ model +'/')
 
       # Create folders if they do not exist
       os.makedirs(os.path.dirname(self.new_dir), exist_ok=True)
@@ -135,7 +136,7 @@ class run():
         
         # Save the initial state
         self.save_states(self.rewards, 0)
-        
+        progress_bar = tqdm(total=self.num_timesteps, desc=f"Random Rollout ({self.temp_env_name})", unit="steps")
         for n in range(self.num_timesteps-self.steps_taken):
             observation = cv2.resize(observation, (512, 512))
 
@@ -179,6 +180,11 @@ class run():
                         observation, info = self.env.reset() 
 
             self.steps_taken += 1
+            progress_bar.update(1)
+            progress_bar.set_postfix({"reward": self.rewards})
+        
+        # Close progress bar
+        progress_bar.close()
         
         print('The reward for ' + self.env_name + ' is: ' + str(self.rewards))
         
@@ -189,7 +195,7 @@ class run():
         self.env.close()
 
     def model_rollout(self):
-        usr_msg1 = 'What should I do? Provide output as a json structured as {reasoning: reasoning for actions and why to choose an action, action: The environment action which would provide the best next state}'
+        usr_msg1 = 'Analyze this game frame and select the optimal action. Focus on immediate gameplay elements visible in this specific frame, and follow the format: {"reasoning": "detailed step-by-step analysis", "action": X}'
         
         # Start the recorder
         self.env.start_video_recorder()
@@ -198,6 +204,8 @@ class run():
         
         # Save the initial state
         self.save_states(self.rewards, 0)
+        progress_bar = tqdm(total=self.num_timesteps, desc=f"{self.model_name} Rollout ({self.temp_env_name})", unit="steps")
+
 
         for n in range(self.num_timesteps-self.steps_taken):
             
@@ -308,6 +316,11 @@ class run():
             self.save_states(self.rewards, action)
 
             self.steps_taken += 1
+            progress_bar.update(1)
+            progress_bar.set_postfix({"reward": self.rewards})
+        
+        # Close progress bar
+        progress_bar.close()
         
         # Close the environment recorder
         self.env.close_video_recorder()

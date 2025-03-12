@@ -1,63 +1,126 @@
+from google.generativeai.types import HarmCategory, HarmBlockThreshold 
+import google.generativeai as genai 
 from openai import OpenAI 
 import anthropic 
-import google.generativeai as genai 
-
 import base64 
-import cv2 
 import json 
+import cv2 
 import re 
-from google.generativeai.types import HarmCategory, HarmBlockThreshold 
+import os 
+import logging
+from typing import Optional, Dict, Any, List, Tuple
+
+# Set up logging
+logger = logging.getLogger("atari-gpt.llms")
 
 class Agent(): 
-    def __init__(self, model_name=None, model = None, system_message=None, env=None): 
-
-        # Get model key for what api to call
+    def __init__(self, model_name=None, model=None, system_message=None, env=None): 
+        """
+        Initialize the Agent with the specified model and environment.
+        
+        Args:
+            model_name: The specific model name to use
+            model: The model provider key ('gpt4', 'gpt4o', 'claude', 'gemini')
+            system_message: The system prompt to use
+            env: The Gymnasium environment
+        """
         self.model_key = model 
-        print('Model Key: ', self.model_key) 
+        logger.info(f'Model Key: {self.model_key}') 
 
-        # Get the model name (for calling correct model to query)
         self.model_name = model_name 
-        
-        print('Model Name: ', self.model_name) 
+        logger.info(f'Model Name: {self.model_name}') 
 
-        # Create list of messages
         self.messages = [] 
-
-        # Get system prompt
         self.system_message = system_message 
-        
-        # Get env 
         self.env = env 
-
-        # Get action space 
         self.action_space = self.env.action_space.n 
-
         self.reset_count = 0 
 
-        # Set up correct model to call 
-        if self.model_key == 'gpt4o' or self.model_key == 'gpt4': 
-            file = open("OPENAI_API_KEY.txt", "r") 
-            api_key = file.read() 
+        # Initialize the appropriate client based on the model key
+        try:
+            if self.model_key in ['gpt4o', 'gpt4']: 
+                self._init_openai_client()
+            elif self.model_key == 'claude':
+                self._init_anthropic_client()
+            elif self.model_key == 'gemini':
+                self._init_gemini_client()
+            else:
+                raise ValueError(f"Unsupported model key: {self.model_key}")
+        except Exception as e:
+            logger.error(f"Error initializing {self.model_key} client: {str(e)}")
+            raise
+
+    def _init_openai_client(self):
+        """Initialize the OpenAI client with API key."""
+        try:
+            api_key = self._get_api_key("OPENAI_API_KEY.txt")
             self.client = OpenAI(api_key=api_key) 
 
-            if system_message is not None: 
-                system_prompt = {"role": "system", "content": [system_message]} 
-                self.messages.append(system_prompt) 
+            if self.system_message is not None: 
+                system_prompt = {"role": "system", "content": [self.system_message]} 
+                self.messages.append(system_prompt)
+        except Exception as e:
+            logger.error(f"Failed to initialize OpenAI client: {str(e)}")
+            raise
 
-        elif self.model_key == 'claude':
-            file = open("ANTHROPIC_API_KEY.txt", "r")
-            api_key = file.read()
+    def _init_anthropic_client(self):
+        """Initialize the Anthropic client with API key."""
+        try:
+            api_key = self._get_api_key("ANTHROPIC_API_KEY.txt")
             self.client = anthropic.Anthropic(api_key=api_key)
-        
-        elif self.model_key == 'gemini':
-            file = open("GOOGLE_API_KEY.txt", "r")
-            api_key = file.read()
+        except Exception as e:
+            logger.error(f"Failed to initialize Anthropic client: {str(e)}")
+            raise
+
+    def _init_gemini_client(self):
+        """Initialize the Google Gemini client with API key."""
+        try:
+            api_key = self._get_api_key("GOOGLE_API_KEY.txt")
             genai.configure(api_key=api_key)
             generation_config = genai.GenerationConfig(temperature=1)
+            
             if self.system_message is not None:
-                self.client = genai.GenerativeModel(model_name = self.model_name, system_instruction=self.system_message, generation_config=generation_config)
+                self.client = genai.GenerativeModel(
+                    model_name=self.model_name, 
+                    system_instruction=self.system_message, 
+                    generation_config=generation_config
+                )
             else:
-                self.client = genai.GenerativeModel(model_name = self.model_name, generation_config=generation_config)
+                self.client = genai.GenerativeModel(
+                    model_name=self.model_name, 
+                    generation_config=generation_config
+                )
+        except Exception as e:
+            logger.error(f"Failed to initialize Gemini client: {str(e)}")
+            raise
+
+    def _get_api_key(self, key_file: str) -> str:
+        """
+        Get API key from file or environment variable.
+        
+        Args:
+            key_file: The file containing the API key
+            
+        Returns:
+            The API key as a string
+        
+        Raises:
+            FileNotFoundError: If the key file doesn't exist and no environment variable is set
+        """
+        # Try to get from environment variable first
+        env_var = key_file.replace(".txt", "")
+        api_key = os.environ.get(env_var)
+        
+        if api_key:
+            return api_key
+            
+        # Fall back to file
+        try:
+            with open(key_file, "r") as file:
+                return file.read().strip()
+        except FileNotFoundError:
+            logger.error(f"API key file {key_file} not found and {env_var} environment variable not set")
+            raise FileNotFoundError(f"API key file {key_file} not found and {env_var} environment variable not set")
 
     def encode_image(self, cv_image):
         _, buffer = cv2.imencode(".jpg", cv_image)
@@ -144,113 +207,148 @@ class Agent():
         print('Model is re-initiated...')
 
     def clean_model_output(self, output):
+        """
+        Clean the model output to ensure it's valid JSON.
+        
+        Args:
+            output: The raw output from the model
+            
+        Returns:
+            Cleaned output string
+        """
+        if not output:
+            logger.warning("Received empty output from model")
+            return ""
+            
         # Remove any unescaped newline characters within the JSON string values
         cleaned_output = re.sub(r'(?<!\\)\n', ' ', output)
         
         # Replace curly quotes with straight quotes if necessary
-        cleaned_output = cleaned_output.replace('“', '"').replace('”', '"')
+        cleaned_output = cleaned_output.replace('"', '"').replace('"', '"')
         
         return cleaned_output
 
     def clean_response(self, response, path):
-        # Correctly get the response from model
-        if self.model_key == 'gpt4' or self.model_key == 'gpt4o':
-            response_text = response.choices[0].message.content
-        elif self.model_key == 'claude':
-            response_text = response.content[0].text
-        elif self.model_key == 'gemini':
-            response_text = response.text
+        """
+        Extract and clean the response from the model.
         
-        if response_text == None:
-            response_text = self.get_response()
-
-        response_text = self.clean_model_output(response_text)
-
-        # This regular expression finds the first { to the last }
-        pattern = r'\{.*\}'
-        # Search for the pattern
-        match = re.search(pattern, response_text, flags=re.DOTALL)
-        # Return the matched group which should be a valid JSON string
-        if match != None:
-            response_text = match.group(0)
-
-        with open(path+'all_responses.txt', "a") as file:
-            file.write(str(response_text) + '\n\n')
-
+        Args:
+            response: The raw response object from the model
+            path: Path to save the response for debugging
+            
+        Returns:
+            Parsed JSON response or None if parsing fails
+        """
         try:
-            response_text = json.loads(response_text)
-
-        except json.JSONDecodeError as e:
-            print('\n\nOutputError: received output that can\'t be read as json. Re-prompting the model.\n\n')
-
-            # Create error message to reprompt the model
-            error_message = 'Your output should be in a valid JSON format with a , after every key.'
-            
-            # Add the error message to the context
-            self.add_user_message(user_msg=error_message)
-
-            print('Generating new response...')
-            while True:
-                # See if you get the correct output
-                try:
-                    response = self.query_LLM()
-                    print('\n\nProper response was generated')
-                    break
-
-                # If it doesn't then reset the model
-                except:
-                    print('Re-initiating model...')
-                    self.reset_model()
-
-                    if self.reset_count >= 3:
-                        return None
-            
-                    
-        
-        return response_text
-    
-    def check_action(self, response_text):
-        while True:
-            # Check if the response is a dictionary
-            if isinstance(response_text, dict):
-
-                # Check if the key action exists 
-                if "action" in response_text.keys():
-                    
-                    # Check to see if the action provided is correct and if so return the action
-                    correct_output = self.env.action_space.n
-                    if int(response_text["action"]) < correct_output:
-                        return int(response_text["action"])
-                    
-                    else:
-                        print('\n\nInvalid Action given (' + response_text['action']+') should be less than ' + correct_output + '.\n\n')
-                        # Create error message to reprompt the model
-                        error_message = 'You didn\'t give a valid action, make sure that it is a valid action from ' + str(0) + ' to ' + str(self.action_space-1) + ' for the action you would like to take.'
-                        
-                        # Add the error message to the context
-                        self.add_user_message(user_msg=error_message)         
-                    
-                # If the action key is not in the json output then reprompt
-                else:
-                    print('\n\nInvalid JSON format given, no action key.\n\n')
-                    # Create error message to reprompt the model
-                    error_message = 'You didn\'t give a complete JSON output, it needs to include an \'action\' key which contains the numerical value for the action.'
-                    
-                    # Add the error message to the context
-                    self.add_user_message(user_msg=error_message)
-            
-            # If the model response is not in the correct format then reprompt the model 
+            # Correctly get the response from model
+            if self.model_key in ['gpt4', 'gpt4o']:
+                response_text = response.choices[0].message.content
+            elif self.model_key == 'claude':
+                response_text = response.content[0].text
+            elif self.model_key == 'gemini':
+                response_text = response.text
             else:
-                print('\n\nInvalid response, not given as a JSON format.\n\n')
+                raise ValueError(f"Unknown model key: {self.model_key}")
+            
+            if response_text is None:
+                logger.warning("Received None response, attempting to get response again")
+                response_text = self.get_response()
+
+            response_text = self.clean_model_output(response_text)
+
+            # Save the raw response for debugging
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path+'all_responses.txt', "a") as file:
+                file.write(str(response_text) + '\n\n')
+
+            # This regular expression finds the first { to the last }
+            pattern = r'\{.*\}'
+            # Search for the pattern
+            match = re.search(pattern, response_text, flags=re.DOTALL)
+            # Return the matched group which should be a valid JSON string
+            if match:
+                response_text = match.group(0)
+
+            try:
+                return json.loads(response_text)
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON decode error: {str(e)}")
+                logger.info("Reprompting the model for valid JSON")
+
                 # Create error message to reprompt the model
-                error_message = 'You didn\'t give a valid response, it need to be a JSON format.'
+                error_message = 'Your output should be in a valid JSON format with a comma after every key-value pair except the last one. Please provide a response with the format: {"reasoning": "your reasoning here", "action": numeric_action_value}'
                 
                 # Add the error message to the context
                 self.add_user_message(user_msg=error_message)
 
-            response = self.get_response()
-
-            response_text = self.clean_response(response, self.path)
+                logger.info('Generating new response...')
+                retry_count = 0
+                max_retries = 3
+                
+                while retry_count < max_retries:
+                    try:
+                        response = self.query_LLM()
+                        logger.info('Proper response was generated')
+                        return self.clean_response(response, path)  # Recursively process the new response
+                    except Exception as e:
+                        logger.error(f"Error generating response (attempt {retry_count+1}): {str(e)}")
+                        self.reset_model()
+                        retry_count += 1
+                
+                logger.error("Failed to get valid JSON after multiple attempts")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error cleaning response: {str(e)}")
+            return None
+    
+    def check_action(self, response_text):
+        """
+        Validate the action from the model response.
+        
+        Args:
+            response_text: The parsed JSON response from the model
+            
+        Returns:
+            Valid action integer or None if invalid
+        """
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            # Check if the response is a dictionary
+            if isinstance(response_text, dict):
+                # Check if the key action exists 
+                if "action" in response_text:
+                    try:
+                        action = int(response_text["action"])
+                        # Check if the action is valid for the environment
+                        if 0 <= action < self.env.action_space.n:
+                            return action
+                        else:
+                            logger.warning(f"Invalid action value: {action}. Must be between 0 and {self.env.action_space.n-1}")
+                    except (ValueError, TypeError) as e:
+                        logger.error(f"Error converting action to integer: {str(e)}")
+                else:
+                    logger.warning("Response missing 'action' key")
+            else:
+                logger.warning(f"Response is not a dictionary: {type(response_text)}")
+            
+            # If we get here, the action was invalid
+            error_message = f'Your action value is invalid. Please provide a valid action between 0 and {self.env.action_space.n-1}.'
+            self.add_user_message(user_msg=error_message)
+            
+            try:
+                response = self.query_LLM()
+                response_text = self.clean_response(response, "./")
+                retry_count += 1
+            except Exception as e:
+                logger.error(f"Error getting new response: {str(e)}")
+                retry_count += 1
+        
+        # If we've exhausted retries, return a default action (0)
+        logger.error("Failed to get valid action after multiple attempts, using default action 0")
+        return 0
 
     def get_response(self):
         # Check to see if you get a response from the model
