@@ -18,9 +18,8 @@ In order to run the code you need to have an API key for the respective model. T
 
 To run the code you will need to have Anaconda and run the following commands:
 
-<br>&ensp;&ensp;&ensp;&ensp;`conda create -n atari_gpt python=3.11`
+<br>&ensp;&ensp;&ensp;&ensp;`conda env create --file=environment.yaml`
 <br>&ensp;&ensp;&ensp;&ensp;`conda activate atari_gpt`
-<br>&ensp;&ensp;&ensp;&ensp;`pip install -r requirements.txt`
 <br>&ensp;&ensp;&ensp;&ensp;`python full_evaluation.py`
 
 ## Usage
