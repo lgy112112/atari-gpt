@@ -217,92 +217,8 @@ class run():
         self.env.close()
 
     def model_rollout(self):
-        # Default user message for most models
+        # Default user message for all models (including vLLM)
         usr_msg1 = 'Analyze this game frame and select the optimal action. Focus on immediate gameplay elements visible in this specific frame, and follow the format: {"reasoning": "detailed step-by-step analysis", "action": X}'
-
-        # Special message for vLLM with more explicit instructions
-        if self.model_name == 'vllm':
-            # Add game-specific instructions
-            game_specific_instructions = ""
-            if "Breakout" in self.temp_env_name:
-                game_specific_instructions = """
-In Breakout, you control a paddle at the bottom of the screen to bounce a ball and break bricks.
-- Action 0: NOOP (do nothing)
-- Action 1: FIRE (start the game if the ball is not in play)
-- Action 2: RIGHT (move paddle right)
-- Action 3: LEFT (move paddle left)
-Focus on keeping the ball in play by positioning the paddle under where the ball will fall.
-"""
-            elif "Pong" in self.temp_env_name:
-                game_specific_instructions = """
-In Pong, you control the right paddle to hit the ball back to your opponent.
-- Action 0: NOOP (do nothing)
-- Action 1: FIRE (not used in gameplay)
-- Action 2: UP (move paddle up)
-- Action 3: DOWN (move paddle down)
-Focus on positioning your paddle to intercept the ball's trajectory.
-"""
-            elif "Alien" in self.temp_env_name:
-                game_specific_instructions = """
-In Alien, you navigate a maze-like environment shooting aliens and avoiding their attacks.
-- Action 0: NOOP (do nothing)
-- Action 1: FIRE (shoot)
-- Action 2: UP (move up)
-- Action 3: RIGHT (move right)
-- Action 4: LEFT (move left)
-- Action 5: DOWN (move down)
-Focus on shooting aliens while avoiding their attacks.
-"""
-            elif "Frogger" in self.temp_env_name:
-                game_specific_instructions = """
-In Frogger, you control a frog trying to cross a road and river.
-- Action 0: NOOP (do nothing)
-- Action 1: UP (move up)
-- Action 2: RIGHT (move right)
-- Action 3: LEFT (move left)
-- Action 4: DOWN (move down)
-Focus on avoiding cars on the road and using logs/turtles to cross the river.
-"""
-
-            # Create a unique timestamp to prevent repetition
-            import time
-            timestamp = int(time.time())
-
-            usr_msg1 = f"""Analyze this Atari game frame and select the optimal action.
-
-Game: {self.temp_env_name[:-3]}
-Current score: {self.rewards}
-Current timestamp: {timestamp}
-Available actions: 0 to {self.env.action_space.n - 1}
-
-{game_specific_instructions}
-
-CRITICAL INSTRUCTION: Your response MUST be ONLY a valid JSON object with EXACTLY this format:
-{{
-  "reasoning": "brief analysis",
-  "action": X
-}}
-
-Where:
-- X is a number between 0 and {self.env.action_space.n - 1}
-- "reasoning" contains your brief analysis of THIS SPECIFIC FRAME
-- The entire response is a valid JSON object
-
-Example of CORRECT response:
-{{"reasoning": "Player should move right to avoid enemy", "action": 3}}
-
-Example of INCORRECT response:
-"reasoning": "Player should move right to avoid enemy",] "action": 2
-
-IMPORTANT RULES:
-1. Start your response with an opening brace {{
-2. Include BOTH "reasoning" and "action" fields
-3. End your response with a closing brace }}
-4. DO NOT include any text outside the JSON object
-5. DO NOT use markdown code blocks
-6. DO NOT repeat your previous responses
-7. DO NOT use any format other than the exact JSON format shown above
-8. DO NOT include the word "reasoning" inside the reasoning value itself"""
 
         # Start the recorder
         self.env.start_video_recorder()
@@ -316,49 +232,8 @@ IMPORTANT RULES:
 
         for n in range(self.num_timesteps-self.steps_taken):
 
-            # Resize observation with better quality for vLLM models
-            if self.model_name == 'vllm':
-                # Use higher quality resize for vLLM models
-                observation = cv2.resize(observation, (512, 512), interpolation=cv2.INTER_LANCZOS4)
-
-                # Apply different image processing based on the game
-                if "Breakout" in self.temp_env_name:
-                    # For Breakout, enhance edges to make ball and paddle more visible
-                    gray = cv2.cvtColor(observation, cv2.COLOR_BGR2GRAY)
-                    edges = cv2.Canny(gray, 50, 150)
-                    edges_colored = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-                    observation = cv2.addWeighted(observation, 0.7, edges_colored, 0.3, 0)
-
-                elif "Pong" in self.temp_env_name:
-                    # For Pong, increase contrast and highlight paddles
-                    hsv = cv2.cvtColor(observation, cv2.COLOR_BGR2HSV)
-                    hsv[:,:,1] = cv2.multiply(hsv[:,:,1], 1.5)  # Increase saturation
-                    observation = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-
-                elif "Alien" in self.temp_env_name or "Frogger" in self.temp_env_name:
-                    # For games with more complex visuals, use adaptive histogram equalization
-                    lab = cv2.cvtColor(observation, cv2.COLOR_BGR2LAB)
-                    l, a, b = cv2.split(lab)
-                    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
-                    cl = clahe.apply(l)
-                    enhanced_lab = cv2.merge((cl, a, b))
-                    observation = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
-
-                    # Also add sharpening
-                    kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
-                    observation = cv2.filter2D(observation, -1, kernel)
-
-                # Add frame number and score as text overlay
-                cv2.putText(observation, f"Frame: {n}, Score: {self.rewards}",
-                            (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-
-                # Save the processed frame for debugging (every 50 frames)
-                if n % 50 == 0:
-                    os.makedirs(os.path.join(self.new_dir, "processed_frames"), exist_ok=True)
-                    cv2.imwrite(os.path.join(self.new_dir, f"processed_frames/frame_{n}.jpg"), observation)
-            else:
-                # Standard resize for other models
-                observation = cv2.resize(observation, (512, 512))
+            # Standard resize for all models (including vLLM)
+            observation = cv2.resize(observation, (512, 512))
 
             if n < self.pause:
                 # Perform no-op action
@@ -432,8 +307,7 @@ IMPORTANT RULES:
                     self.rewards += reward
                     self.cum_rewards.append(self.rewards)
 
-                    # Context buffer of only the 4 most recent frames
-                    # delete oldest context
+                    # Context buffer management - use standard API-like context window of 8 messages
                     self.model.delete_messages()
 
                     # Check done condition

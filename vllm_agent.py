@@ -185,80 +185,31 @@ class VllmAgent:
         """
         Delete old messages to maintain a context window.
         Compatible with the original Agent.delete_messages method.
-        Uses an adaptive strategy based on game progress.
+        Uses a fixed context window size of 8 messages, matching API models.
         """
-        logger.info('Managing conversation history...')
+        logger.info('Deleting Set of Messages...')
+        
+        # Standard API model behavior: keep at most 8 messages
+        message_len = 8
 
-        # Adaptive context window management
-        # Start with larger context window, reduce as game progresses
-        # This helps the model learn the game at the beginning
-        # but prevents context overload later
-
-        # Get current game progress (estimate based on message count)
-        message_count = len(self.messages)
-
-        # Use a smaller context window to prevent repetition
-        # Only keep the most recent user message and system message
-        # This prevents the model from seeing its own previous responses
-        keep_last = 1  # Only keep the most recent user message
-
-        # Every 10 messages, clear the context completely to force fresh thinking
-        if message_count % 10 == 0 and message_count > 0:
-            logger.info("Clearing context completely to force fresh thinking")
-            # Keep only system messages
-            self.messages = [m for m in self.messages if m["role"] == "system"]
-            # Add a special message to encourage diversity
-            self.messages.append({
-                "role": "system",
-                "content": f"Think creatively about the game state. Consider different strategies than before. The current game is {self.env.__class__.__name__}."
-            })
-
-        logger.info(f"Using adaptive context window of {keep_last} messages (message count: {message_count})")
-
-        # First keep system message and recent messages
-        if len(self.messages) > keep_last:
-            system_messages = [m for m in self.messages if m["role"] == "system"]
-            recent_messages = self.messages[-keep_last:]
-            self.messages = system_messages + recent_messages
-
-        # Then ensure only one image message is kept
-        image_messages = []
-        for i, msg in enumerate(self.messages):
-            if msg["role"] == "user" and isinstance(msg["content"], list):
-                # Check if it contains an image
-                has_image = any(item.get("type") == "image_url" for item in msg["content"])
-                if has_image:
-                    image_messages.append(i)
-
-        # If there are multiple image messages, keep only the latest one
-        if len(image_messages) > 1:
-            logger.info(f"Found {len(image_messages)} image messages, keeping only the latest one")
-            # Keep the last image message
-            keep_image_idx = image_messages[-1]
-            # Remove images from other messages
-            for idx in image_messages[:-1]:
-                # Keep only text parts
-                text_parts = [item for item in self.messages[idx]["content"] if item.get("type") == "text"]
-                if text_parts:
-                    self.messages[idx]["content"] = text_parts
-                else:
-                    # If no text parts, set content to empty string
-                    self.messages[idx]["content"] = "Previous image message (image removed)"
-
-        # Periodically add a reminder about the game objective
-        if message_count % 20 == 0 and message_count > 0:
-            # Extract game name from environment
-            game_name = self.env.__class__.__name__
-            if hasattr(self.env, 'env') and hasattr(self.env.env, 'spec') and hasattr(self.env.env.spec, 'id'):
-                game_name = self.env.env.spec.id
-
-            # Add a reminder message
-            reminder = f"Remember, you are playing {game_name}. Your goal is to maximize your score by selecting the best action for each frame."
-            self.messages.append({
-                "role": "system",
-                "content": reminder
-            })
-            logger.info(f"Added game objective reminder at message {message_count}")
+        if len(self.messages) >= message_len:
+            if any(m["role"] == "system" for m in self.messages):
+                # Keep system messages
+                system_messages = [m for m in self.messages if m["role"] == "system"]
+                # Keep most recent messages (excluding system messages)
+                non_system_messages = [m for m in self.messages if m["role"] != "system"]
+                # Calculate how many non-system messages to keep
+                keep_count = message_len - len(system_messages)
+                keep_count = max(0, min(keep_count, len(non_system_messages)))
+                # Keep the most recent non-system messages
+                recent_messages = non_system_messages[-keep_count:] if keep_count > 0 else []
+                # Combine system and recent messages
+                self.messages = system_messages + recent_messages
+            else:
+                # If no system messages, just keep the most recent messages
+                self.messages = self.messages[-message_len:]
+                
+        logger.info(f"Context window maintained at {message_len} messages maximum")
 
     def query_LLM(self):
         """
