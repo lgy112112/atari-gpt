@@ -87,7 +87,7 @@ class QwenVLAgent:
     """
     Agent that uses Qwen2-VL model to play Atari games.
     """
-    def __init__(self, model_name="Qwen/Qwen2-VL-2B-Instruct", system_message=None, env=None):
+    def __init__(self, model_name="Qwen/Qwen2.5-VL-3B-Instruct", system_message=None, env=None):
         """
         Initialize the QwenVLAgent.
 
@@ -400,7 +400,7 @@ def run_test(env_name, prompt, output_dir="./experiments/"):
     env = ContinuousRecordVideo(env=temp_env, video_folder=new_dir, name_prefix=temp_env_name[:-3] + "_rollout")
 
     # Initialize agent
-    agent = QwenVLAgent(model_name="Qwen/Qwen2-VL-2B-Instruct", system_message=prompt, env=env)
+    agent = QwenVLAgent(model_name="Qwen/Qwen2.5-VL-3B-Instruct", system_message=prompt, env=env)
 
     # Start the recorder
     env.start_video_recorder()

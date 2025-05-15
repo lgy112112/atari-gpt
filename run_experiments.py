@@ -1,9 +1,13 @@
 import gymnasium as gym
 import time
 import json
+import numpy as np
 from tqdm import tqdm
 
-from llms import Agent
+from llms import Agent, VLLM_AVAILABLE
+# Import VllmAgent if available
+if VLLM_AVAILABLE:
+    from vllm_agent import VllmAgent
 import cv2
 import csv
 import os
@@ -27,23 +31,24 @@ class ContinuousRecordVideo(RecordVideo):
         return observation, info
 
 class run():
-    def __init__(self, env_name, prompt, model, output_dir="./experiments/"):
+    def __init__(self, env_name, prompt, model, output_dir="./experiments/", vllm_model=None,
+                 vllm_max_model_len=2048, vllm_gpu_memory_utilization=0.85, vllm_tensor_parallel_size=1):
       self.model_name = model
       self.rewards = 0
       self.cum_rewards = []
       self.action_list = []
       self.header = ["actions", "cumulative_rewards"]
-      self.MODELS = {"OpenAI": ["gpt-4-turbo", "gpt-4o-2024-11-20"], 
-              "Anthropic": ["claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307", "claude-3.5-sonnet", "max-tokens-3-5-sonnet-2024-07-15"], 
-              "Google": ["gemini-1.5-pro-latest", "gemini-pro", "gemini-pro-vision", "gemini-1.5-flash-latest"], 
+      self.MODELS = {"OpenAI": ["gpt-4-turbo", "gpt-4o-2024-11-20"],
+              "Anthropic": ["claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307", "claude-3.5-sonnet", "max-tokens-3-5-sonnet-2024-07-15"],
+              "Google": ["gemini-1.5-pro-latest", "gemini-pro", "gemini-pro-vision", "gemini-1.5-flash-latest"],
               "Meta": ["llama3-70b-8192", "llama3-8b-8192"]
               }
-      
+
       self.states = []
-      
+
       self.steps_taken = 0
 
-      # System prompt 
+      # System prompt
       self.sys_prompt = prompt
 
       self.env_name = env_name
@@ -64,7 +69,7 @@ class run():
       # Total number of timesteps
       self.num_timesteps = 1000
 
-      # Create new experiment folders path with model name 
+      # Create new experiment folders path with model name
       self.output_dir = output_dir
       self.new_dir = os.path.join(self.output_dir, self.temp_env_name[:-3] + '_'+ model +'/')
 
@@ -73,7 +78,7 @@ class run():
 
       # Check if the environment state is saved
       if os.path.exists(self.new_dir + 'env_' + self.temp_env_name[:-3]+ '_state.pkl'):
-          
+
           print('\n\nEnvironment Results Already Exist, Going to Next Environment...\n\n')
           return
 
@@ -93,38 +98,55 @@ class run():
           self.rand_rollout()
 
       elif self.model_name == 'gpt4':
-          self.model = Agent(model_name=self.MODELS["OpenAI"][0], model = self.model_name, system_message=self.sys_prompt, env=self.env)
-         
+          self.model = Agent(model_name=self.MODELS["OpenAI"][0], model=self.model_name, system_message=self.sys_prompt, env=self.env)
+
       elif self.model_name == 'gpt4o':
-          self.model = Agent(model_name=self.MODELS["OpenAI"][1], model = self.model_name, system_message=self.sys_prompt, env=self.env)
-            
+          self.model = Agent(model_name=self.MODELS["OpenAI"][1], model=self.model_name, system_message=self.sys_prompt, env=self.env)
+
       elif self.model_name == 'gemini':
-          self.model = Agent(model_name=self.MODELS["Google"][3], model = self.model_name, system_message=self.sys_prompt, env=self.env)
-            
+          self.model = Agent(model_name=self.MODELS["Google"][3], model=self.model_name, system_message=self.sys_prompt, env=self.env)
+
       elif self.model_name == 'claude':
-          self.model = Agent(model_name=self.MODELS["Anthropic"][2], model = self.model_name, system_message=self.sys_prompt, env=self.env)
-            
-      if self.model_name != 'rand':   
+          self.model = Agent(model_name=self.MODELS["Anthropic"][2], model=self.model_name, system_message=self.sys_prompt, env=self.env)
+
+      elif self.model_name == 'vllm':
+          if not VLLM_AVAILABLE:
+              raise ImportError("vLLM is not installed. Please install it with 'pip install vllm'.")
+          # Use specified vLLM model or default to Qwen2-VL-2B-Instruct
+          vllm_model_name = vllm_model if vllm_model else "Qwen/Qwen2.5-VL-3B-Instruct"
+
+          # Initialize vLLM agent with memory optimization parameters
+          self.model = VllmAgent(
+              model_name=vllm_model_name,
+              model=self.model_name,
+              system_message=self.sys_prompt,
+              env=self.env,
+              max_model_len=vllm_max_model_len,
+              gpu_memory_utilization=vllm_gpu_memory_utilization,
+              tensor_parallel_size=vllm_tensor_parallel_size
+          )
+
+      if self.model_name != 'rand':
           self.model_rollout()
 
       with open(self.new_dir + 'actions_rewards.csv', 'w') as f:
           writer = csv.writer(f)
           writer.writerow(self.header)
-          
+
           for action, cum_reward in zip(self.action_list, self.cum_rewards):
               writer.writerow([action, cum_reward])
 
     def save_states(self, rewards, action):
 
-        # Save the environment's 
+        # Save the environment's
         state = self.env.ale.cloneState()
 
         # Save the environment's random state
         random_state = self.env.np_random if hasattr(self.env, 'np_random') else self.env.unwrapped.np_random
 
         self.states.append((state, random_state, rewards, self.steps_taken, action))
-        
-        # Save the state to pkl file 
+
+        # Save the state to pkl file
         with open(self.new_dir + 'env_' + self.temp_env_name[:-3]+ '_state.pkl', 'wb') as f:
             pickle.dump(self.states, f)
 
@@ -133,7 +155,7 @@ class run():
         self.env.start_video_recorder()
 
         observation, info = self.env.reset()
-        
+
         # Save the initial state
         self.save_states(self.rewards, 0)
         progress_bar = tqdm(total=self.num_timesteps, desc=f"Random Rollout ({self.temp_env_name})", unit="steps")
@@ -149,7 +171,7 @@ class run():
 
                 self.rewards += reward
                 self.cum_rewards.append(self.rewards)
-            
+
             elif n % 2 == 1:
                 # image buffer
                 action = self.env.action_space.sample()
@@ -161,7 +183,7 @@ class run():
 
                 self.rewards += reward
                 self.cum_rewards.append(self.rewards)
-                
+
                 if terminated or truncated:
                     observation, info = self.env.reset()
             else:
@@ -177,46 +199,172 @@ class run():
                 self.cum_rewards.append(self.rewards)
 
                 if terminated or truncated:
-                        observation, info = self.env.reset() 
+                        observation, info = self.env.reset()
 
             self.steps_taken += 1
             progress_bar.update(1)
             progress_bar.set_postfix({"reward": self.rewards})
-        
+
         # Close progress bar
         progress_bar.close()
-        
+
         print('The reward for ' + self.env_name + ' is: ' + str(self.rewards))
-        
+
         # Close the environment recorder
         self.env.close_video_recorder()
-        
+
         # Close the environment
         self.env.close()
 
     def model_rollout(self):
+        # Default user message for most models
         usr_msg1 = 'Analyze this game frame and select the optimal action. Focus on immediate gameplay elements visible in this specific frame, and follow the format: {"reasoning": "detailed step-by-step analysis", "action": X}'
-        
+
+        # Special message for vLLM with more explicit instructions
+        if self.model_name == 'vllm':
+            # Add game-specific instructions
+            game_specific_instructions = ""
+            if "Breakout" in self.temp_env_name:
+                game_specific_instructions = """
+In Breakout, you control a paddle at the bottom of the screen to bounce a ball and break bricks.
+- Action 0: NOOP (do nothing)
+- Action 1: FIRE (start the game if the ball is not in play)
+- Action 2: RIGHT (move paddle right)
+- Action 3: LEFT (move paddle left)
+Focus on keeping the ball in play by positioning the paddle under where the ball will fall.
+"""
+            elif "Pong" in self.temp_env_name:
+                game_specific_instructions = """
+In Pong, you control the right paddle to hit the ball back to your opponent.
+- Action 0: NOOP (do nothing)
+- Action 1: FIRE (not used in gameplay)
+- Action 2: UP (move paddle up)
+- Action 3: DOWN (move paddle down)
+Focus on positioning your paddle to intercept the ball's trajectory.
+"""
+            elif "Alien" in self.temp_env_name:
+                game_specific_instructions = """
+In Alien, you navigate a maze-like environment shooting aliens and avoiding their attacks.
+- Action 0: NOOP (do nothing)
+- Action 1: FIRE (shoot)
+- Action 2: UP (move up)
+- Action 3: RIGHT (move right)
+- Action 4: LEFT (move left)
+- Action 5: DOWN (move down)
+Focus on shooting aliens while avoiding their attacks.
+"""
+            elif "Frogger" in self.temp_env_name:
+                game_specific_instructions = """
+In Frogger, you control a frog trying to cross a road and river.
+- Action 0: NOOP (do nothing)
+- Action 1: UP (move up)
+- Action 2: RIGHT (move right)
+- Action 3: LEFT (move left)
+- Action 4: DOWN (move down)
+Focus on avoiding cars on the road and using logs/turtles to cross the river.
+"""
+
+            # Create a unique timestamp to prevent repetition
+            import time
+            timestamp = int(time.time())
+
+            usr_msg1 = f"""Analyze this Atari game frame and select the optimal action.
+
+Game: {self.temp_env_name[:-3]}
+Current score: {self.rewards}
+Current timestamp: {timestamp}
+Available actions: 0 to {self.env.action_space.n - 1}
+
+{game_specific_instructions}
+
+CRITICAL INSTRUCTION: Your response MUST be ONLY a valid JSON object with EXACTLY this format:
+{{
+  "reasoning": "brief analysis",
+  "action": X
+}}
+
+Where:
+- X is a number between 0 and {self.env.action_space.n - 1}
+- "reasoning" contains your brief analysis of THIS SPECIFIC FRAME
+- The entire response is a valid JSON object
+
+Example of CORRECT response:
+{{"reasoning": "Player should move right to avoid enemy", "action": 3}}
+
+Example of INCORRECT response:
+"reasoning": "Player should move right to avoid enemy",] "action": 2
+
+IMPORTANT RULES:
+1. Start your response with an opening brace {{
+2. Include BOTH "reasoning" and "action" fields
+3. End your response with a closing brace }}
+4. DO NOT include any text outside the JSON object
+5. DO NOT use markdown code blocks
+6. DO NOT repeat your previous responses
+7. DO NOT use any format other than the exact JSON format shown above
+8. DO NOT include the word "reasoning" inside the reasoning value itself"""
+
         # Start the recorder
         self.env.start_video_recorder()
 
         observation, info = self.env.reset()
-        
+
         # Save the initial state
         self.save_states(self.rewards, 0)
         progress_bar = tqdm(total=self.num_timesteps, desc=f"{self.model_name} Rollout ({self.temp_env_name})", unit="steps")
 
 
         for n in range(self.num_timesteps-self.steps_taken):
-            
-            # resize cv2 512x512
-            observation = cv2.resize(observation, (512, 512))
+
+            # Resize observation with better quality for vLLM models
+            if self.model_name == 'vllm':
+                # Use higher quality resize for vLLM models
+                observation = cv2.resize(observation, (512, 512), interpolation=cv2.INTER_LANCZOS4)
+
+                # Apply different image processing based on the game
+                if "Breakout" in self.temp_env_name:
+                    # For Breakout, enhance edges to make ball and paddle more visible
+                    gray = cv2.cvtColor(observation, cv2.COLOR_BGR2GRAY)
+                    edges = cv2.Canny(gray, 50, 150)
+                    edges_colored = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+                    observation = cv2.addWeighted(observation, 0.7, edges_colored, 0.3, 0)
+
+                elif "Pong" in self.temp_env_name:
+                    # For Pong, increase contrast and highlight paddles
+                    hsv = cv2.cvtColor(observation, cv2.COLOR_BGR2HSV)
+                    hsv[:,:,1] = cv2.multiply(hsv[:,:,1], 1.5)  # Increase saturation
+                    observation = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+
+                elif "Alien" in self.temp_env_name or "Frogger" in self.temp_env_name:
+                    # For games with more complex visuals, use adaptive histogram equalization
+                    lab = cv2.cvtColor(observation, cv2.COLOR_BGR2LAB)
+                    l, a, b = cv2.split(lab)
+                    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+                    cl = clahe.apply(l)
+                    enhanced_lab = cv2.merge((cl, a, b))
+                    observation = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
+
+                    # Also add sharpening
+                    kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
+                    observation = cv2.filter2D(observation, -1, kernel)
+
+                # Add frame number and score as text overlay
+                cv2.putText(observation, f"Frame: {n}, Score: {self.rewards}",
+                            (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
+                # Save the processed frame for debugging (every 50 frames)
+                if n % 50 == 0:
+                    os.makedirs(os.path.join(self.new_dir, "processed_frames"), exist_ok=True)
+                    cv2.imwrite(os.path.join(self.new_dir, f"processed_frames/frame_{n}.jpg"), observation)
+            else:
+                # Standard resize for other models
+                observation = cv2.resize(observation, (512, 512))
 
             if n < self.pause:
                 # Perform no-op action
                 action = 0
-                
-                # Save action 
+
+                # Save action
                 self.action_list.append(action)
 
                 # Perform Action
@@ -245,7 +393,7 @@ class run():
 
                     # Add models reasoning to context
                     self.model.add_assistant_message()
-                    
+
                     # Save action
                     self.action_list.append(action)
 
@@ -253,15 +401,15 @@ class run():
                     observation, reward, terminated, truncated, info = self.env.step(action)
 
                     self.env.render()
-                    
+
                     # Sum reward and save
                     self.rewards += reward
                     self.cum_rewards.append(self.rewards)
 
-                    # Check done condition 
+                    # Check done condition
                     if terminated or truncated:
                         observation, info = self.env.reset()
-                
+
                 else:
                     # Add frame and reason
                     self.model.add_user_message(observation, usr_msg1)
@@ -271,10 +419,10 @@ class run():
 
                     # Add models reasoning to context
                     self.model.add_assistant_message()
-                
+
                     # Save action
                     self.action_list.append(action)
-                    
+
                     # Perform Action
                     observation, reward, terminated, truncated, info = self.env.step(action)
 
@@ -287,16 +435,16 @@ class run():
                     # Context buffer of only the 4 most recent frames
                     # delete oldest context
                     self.model.delete_messages()
-                    
-                    # Check done condition 
+
+                    # Check done condition
                     if terminated or truncated:
                         observation, info = self.env.reset()
-            
+
             else:
                 # Perform no-op action
                 action = 0
-                
-                # Save action 
+
+                # Save action
                 self.action_list.append(action)
 
                 # Perform Action
@@ -310,20 +458,24 @@ class run():
 
                 # Check done condition
                 if terminated or truncated:
-                        observation, info = self.env.reset() 
-            
+                        observation, info = self.env.reset()
+
             # Save the state once the action has been performed
             self.save_states(self.rewards, action)
 
             self.steps_taken += 1
             progress_bar.update(1)
             progress_bar.set_postfix({"reward": self.rewards})
-        
+
         # Close progress bar
         progress_bar.close()
-        
+
         # Close the environment recorder
         self.env.close_video_recorder()
-        
+
         # Close the environment
         self.env.close()
+
+        # Close the vLLM agent if used
+        if self.model_name == 'vllm' and hasattr(self.model, 'close'):
+            self.model.close()

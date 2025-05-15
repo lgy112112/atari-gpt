@@ -1,49 +1,60 @@
-from google.generativeai.types import HarmCategory, HarmBlockThreshold 
-import google.generativeai as genai 
-from openai import OpenAI 
-import anthropic 
-import base64 
-import json 
-import cv2 
-import re 
-import os 
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
+import google.generativeai as genai
+from openai import OpenAI
+import anthropic
+import base64
+import json
+import cv2
+import re
+import os
 import logging
 from typing import Optional, Dict, Any, List, Tuple
+
+# Import vLLM agent if available
+try:
+    from vllm_agent import VllmAgent
+    VLLM_AVAILABLE = True
+except ImportError:
+    VLLM_AVAILABLE = False
 
 # Set up logging
 logger = logging.getLogger("atari-gpt.llms")
 
-class Agent(): 
-    def __init__(self, model_name=None, model=None, system_message=None, env=None): 
+class Agent():
+    def __init__(self, model_name=None, model=None, system_message=None, env=None):
         """
         Initialize the Agent with the specified model and environment.
-        
+
         Args:
             model_name: The specific model name to use
             model: The model provider key ('gpt4', 'gpt4o', 'claude', 'gemini')
             system_message: The system prompt to use
             env: The Gymnasium environment
         """
-        self.model_key = model 
-        logger.info(f'Model Key: {self.model_key}') 
+        self.model_key = model
+        logger.info(f'Model Key: {self.model_key}')
 
-        self.model_name = model_name 
-        logger.info(f'Model Name: {self.model_name}') 
+        self.model_name = model_name
+        logger.info(f'Model Name: {self.model_name}')
 
-        self.messages = [] 
-        self.system_message = system_message 
-        self.env = env 
-        self.action_space = self.env.action_space.n 
-        self.reset_count = 0 
+        self.messages = []
+        self.system_message = system_message
+        self.env = env
+        self.action_space = self.env.action_space.n
+        self.reset_count = 0
 
         # Initialize the appropriate client based on the model key
         try:
-            if self.model_key in ['gpt4o', 'gpt4']: 
+            if self.model_key in ['gpt4o', 'gpt4']:
                 self._init_openai_client()
             elif self.model_key == 'claude':
                 self._init_anthropic_client()
             elif self.model_key == 'gemini':
                 self._init_gemini_client()
+            elif self.model_key == 'vllm':
+                # For vLLM, we use the VllmAgent class directly
+                # This is handled in run_experiments.py
+                pass
             else:
                 raise ValueError(f"Unsupported model key: {self.model_key}")
         except Exception as e:
@@ -54,10 +65,10 @@ class Agent():
         """Initialize the OpenAI client with API key."""
         try:
             api_key = self._get_api_key("OPENAI_API_KEY.txt")
-            self.client = OpenAI(api_key=api_key) 
+            self.client = OpenAI(api_key=api_key)
 
-            if self.system_message is not None: 
-                system_prompt = {"role": "system", "content": [self.system_message]} 
+            if self.system_message is not None:
+                system_prompt = {"role": "system", "content": [self.system_message]}
                 self.messages.append(system_prompt)
         except Exception as e:
             logger.error(f"Failed to initialize OpenAI client: {str(e)}")
@@ -78,16 +89,16 @@ class Agent():
             api_key = self._get_api_key("GOOGLE_API_KEY.txt")
             genai.configure(api_key=api_key)
             generation_config = genai.GenerationConfig(temperature=1)
-            
+
             if self.system_message is not None:
                 self.client = genai.GenerativeModel(
-                    model_name=self.model_name, 
-                    system_instruction=self.system_message, 
+                    model_name=self.model_name,
+                    system_instruction=self.system_message,
                     generation_config=generation_config
                 )
             else:
                 self.client = genai.GenerativeModel(
-                    model_name=self.model_name, 
+                    model_name=self.model_name,
                     generation_config=generation_config
                 )
         except Exception as e:
@@ -97,23 +108,23 @@ class Agent():
     def _get_api_key(self, key_file: str) -> str:
         """
         Get API key from file or environment variable.
-        
+
         Args:
             key_file: The file containing the API key
-            
+
         Returns:
             The API key as a string
-        
+
         Raises:
             FileNotFoundError: If the key file doesn't exist and no environment variable is set
         """
         # Try to get from environment variable first
         env_var = key_file.replace(".txt", "")
         api_key = os.environ.get(env_var)
-        
+
         if api_key:
             return api_key
-            
+
         # Fall back to file
         try:
             with open(key_file, "r") as file:
@@ -125,10 +136,10 @@ class Agent():
     def encode_image(self, cv_image):
         _, buffer = cv2.imencode(".jpg", cv_image)
         return base64.b64encode(buffer).decode("utf-8")
-    
+
     def query_LLM(self):
 
-        # Check which model to use and prompt the model 
+        # Check which model to use and prompt the model
         if self.model_key=='gpt4' or self.model_key=='gpt4o':
             self.response = self.client.chat.completions.create(
                 model=self.model_name,
@@ -170,14 +181,14 @@ class Agent():
 
         # return the output of the model
         return self.response
-    
+
     def reset_model(self):
 
         self.client = None
 
         if self.reset_count >= 3:
             return
-        
+
         if self.model_key == 'gpt4o' or self.model_key == 'gpt4':
             file = open("OPENAI_API_KEY.txt", "r")
             api_key = file.read()
@@ -191,7 +202,7 @@ class Agent():
             file = open("ANTHROPIC_API_KEY.txt", "r")
             api_key = file.read()
             self.client = anthropic.Anthropic(api_key=api_key)
-        
+
         elif self.model_key == 'gemini':
             file = open("GOOGLE_API_KEY.txt", "r")
             api_key = file.read()
@@ -209,33 +220,33 @@ class Agent():
     def clean_model_output(self, output):
         """
         Clean the model output to ensure it's valid JSON.
-        
+
         Args:
             output: The raw output from the model
-            
+
         Returns:
             Cleaned output string
         """
         if not output:
             logger.warning("Received empty output from model")
             return ""
-            
+
         # Remove any unescaped newline characters within the JSON string values
         cleaned_output = re.sub(r'(?<!\\)\n', ' ', output)
-        
+
         # Replace curly quotes with straight quotes if necessary
         cleaned_output = cleaned_output.replace('"', '"').replace('"', '"')
-        
+
         return cleaned_output
 
     def clean_response(self, response, path):
         """
         Extract and clean the response from the model.
-        
+
         Args:
             response: The raw response object from the model
             path: Path to save the response for debugging
-            
+
         Returns:
             Parsed JSON response or None if parsing fails
         """
@@ -249,7 +260,7 @@ class Agent():
                 response_text = response.text
             else:
                 raise ValueError(f"Unknown model key: {self.model_key}")
-            
+
             if response_text is None:
                 logger.warning("Received None response, attempting to get response again")
                 response_text = self.get_response()
@@ -277,14 +288,14 @@ class Agent():
 
                 # Create error message to reprompt the model
                 error_message = 'Your output should be in a valid JSON format with a comma after every key-value pair except the last one. Please provide a response with the format: {"reasoning": "your reasoning here", "action": numeric_action_value}'
-                
+
                 # Add the error message to the context
                 self.add_user_message(user_msg=error_message)
 
                 logger.info('Generating new response...')
                 retry_count = 0
                 max_retries = 3
-                
+
                 while retry_count < max_retries:
                     try:
                         response = self.query_LLM()
@@ -294,31 +305,31 @@ class Agent():
                         logger.error(f"Error generating response (attempt {retry_count+1}): {str(e)}")
                         self.reset_model()
                         retry_count += 1
-                
+
                 logger.error("Failed to get valid JSON after multiple attempts")
                 return None
-                
+
         except Exception as e:
             logger.error(f"Error cleaning response: {str(e)}")
             return None
-    
+
     def check_action(self, response_text):
         """
         Validate the action from the model response.
-        
+
         Args:
             response_text: The parsed JSON response from the model
-            
+
         Returns:
             Valid action integer or None if invalid
         """
         max_retries = 3
         retry_count = 0
-        
+
         while retry_count < max_retries:
             # Check if the response is a dictionary
             if isinstance(response_text, dict):
-                # Check if the key action exists 
+                # Check if the key action exists
                 if "action" in response_text:
                     try:
                         action = int(response_text["action"])
@@ -333,11 +344,11 @@ class Agent():
                     logger.warning("Response missing 'action' key")
             else:
                 logger.warning(f"Response is not a dictionary: {type(response_text)}")
-            
+
             # If we get here, the action was invalid
             error_message = f'Your action value is invalid. Please provide a valid action between 0 and {self.env.action_space.n-1}.'
             self.add_user_message(user_msg=error_message)
-            
+
             try:
                 response = self.query_LLM()
                 response_text = self.clean_response(response, "./")
@@ -345,14 +356,14 @@ class Agent():
             except Exception as e:
                 logger.error(f"Error getting new response: {str(e)}")
                 retry_count += 1
-        
+
         # If we've exhausted retries, return a default action (0)
         logger.error("Failed to get valid action after multiple attempts, using default action 0")
         return 0
 
     def get_response(self):
         # Check to see if you get a response from the model
-        try: 
+        try:
             response = self.query_LLM()
 
 
@@ -360,7 +371,7 @@ class Agent():
         # Reset the model and try again
         except:
             print('\n\nReceived Error when generating response reseting model\n\n')
-            
+
             # Reset model
             self.reset_model()
 
@@ -375,24 +386,24 @@ class Agent():
                 except:
                     # Create error message to reprompt the model
                     error_message = 'Please provide a proper output'
-                    
+
                     # Add the error message to the context
                     self.add_user_message(user_msg=error_message)
 
                     print('Re-initiating model...')
-                    self.reset_model() 
+                    self.reset_model()
 
                     # This means that more than likely you ran out of credits so break the code to not spend money
                     if self.reset_count >= 3:
                         return None
-                    
+
         if response == 'idchoicescreatedmodelobjectsystem_fingerprintusage':
             response = self.get_response()
-        
+
         return response
 
 
-    def generate_response(self, path) -> str:   
+    def generate_response(self, path) -> str:
         response = self.get_response()
 
         # Check if it is just reasoning or actual action output
@@ -449,7 +460,7 @@ class Agent():
                 )
             else:
                 pass
-        
+
         elif self.model_key == 'claude':
             if frame is not None and user_msg is not None:
                 image_data = self.encode_image(frame)
@@ -553,10 +564,10 @@ class Agent():
                 self.messages.append({"role": "assistant", "content": self.response})
                 demo_str = None
                 return
-            
+
             if self.response is not None:
                 self.messages.append({"role": "assistant", "content": self.response})
-        
+
         elif self.model_key == 'claude':
             if demo_str is not None:
                 self.messages.append(
@@ -618,7 +629,7 @@ class Agent():
         else:
             message_len = 8
 
-        
+
         if len(self.messages) >= message_len:
 
             if self.messages[0]['role'] == 'system':

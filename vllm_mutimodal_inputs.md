@@ -97,13 +97,13 @@ for o in outputs:
 
 Full example: <gh-file:examples/offline_inference/vision_language_multi_image.py>
 
-Multi-image input can be extended to perform video captioning. We show this with [Qwen2-VL](https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct) as it supports videos:
+Multi-image input can be extended to perform video captioning. We show this with [Qwen2-VL](https://huggingface.co/Qwen/Qwen2.5-VL-3B-Instruct) as it supports videos:
 
 ```python
 from vllm import LLM
 
 # Specify the maximum number of frames per video to be 4. This can be changed.
-llm = LLM("Qwen/Qwen2-VL-2B-Instruct", limit_mm_per_prompt={"image": 4})
+llm = LLM("Qwen/Qwen2.5-VL-3B-Instruct", limit_mm_per_prompt={"image": 4})
 
 # Create the request payload.
 video_frames = ... # load your video making sure it only has the number of frames specified earlier.
@@ -178,7 +178,7 @@ prompt = ...
 image_embeds = torch.load(...)
 
 # Qwen2-VL
-llm = LLM("Qwen/Qwen2-VL-2B-Instruct", limit_mm_per_prompt={"image": 4})
+llm = LLM("Qwen/Qwen2.5-VL-3B-Instruct", limit_mm_per_prompt={"image": 4})
 mm_data = {
     "image": {
         "image_embeds": image_embeds,
@@ -481,7 +481,7 @@ The following example demonstrates how to pass image embeddings to the OpenAI se
 
 ```python
 image_embedding = torch.load(...)
-grid_thw = torch.load(...) # Required by Qwen/Qwen2-VL-2B-Instruct
+grid_thw = torch.load(...) # Required by Qwen/Qwen2.5-VL-3B-Instruct
 
 buffer = io.BytesIO()
 torch.save(image_embedding, buffer)
@@ -503,12 +503,12 @@ embeds =  {
 }
 
 # Pass additional parameters (available to Qwen2-VL and MiniCPM-V)
-model = "Qwen/Qwen2-VL-2B-Instruct"
+model = "Qwen/Qwen2.5-VL-3B-Instruct"
 embeds =  {
     "type": "image_embeds",
     "image_embeds": {
         "image_embeds": f"{base64_image_embedding}" , # Required
-        "image_grid_thw": f"{base64_image_grid_thw}"  # Required by Qwen/Qwen2-VL-2B-Instruct
+        "image_grid_thw": f"{base64_image_grid_thw}"  # Required by Qwen/Qwen2.5-VL-3B-Instruct
     },
 }
 model = "openbmb/MiniCPM-V-2_6"
